@@ -60,8 +60,8 @@ export async function GET(req: NextRequest) {
             // Integrity Check: If Part A exists but Part B is missing.
             if (content_b_encrypted === null || content_b_encrypted === undefined) {
                 console.error(`[CRITICAL] Data Integrity Compromised for ID: ${row.id}`);
-                // Enterprise: Continue partial results or fail? Fail safe is better.
-                return NextResponse.json({ error: 'Data Integrity Compromised' }, { status: 500 });
+                // Enterprise: Continue partial results instead of total failure to allow cleanup.
+                continue;
             }
 
             // Dual-Key Decryption
