@@ -60,8 +60,10 @@ export async function middleware(req: NextRequest) {
 
         const ip = (req as any).ip || req.headers.get('x-forwarded-for') || '127.0.0.1';
 
-        // 0. Health Check Exemption (Public Access for Connectivity Testing)
-        if (req.nextUrl.pathname === '/api/health') {
+        // 0. Health Check & Admin Console Exemption
+        if (req.nextUrl.pathname === '/api/health' ||
+            req.nextUrl.pathname.startsWith('/sys-monitor') ||
+            req.nextUrl.pathname.startsWith('/api/sys-monitor')) {
             return NextResponse.next();
         }
 
