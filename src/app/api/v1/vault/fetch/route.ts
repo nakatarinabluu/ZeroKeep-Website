@@ -95,7 +95,9 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(responseData);
     } catch (error) {
-        // Enterprise: No stack trace
-        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        // Enterprise: No stack trace, but return specific message for debugging
+        console.error('Fetch Error:', error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });
     }
 }
