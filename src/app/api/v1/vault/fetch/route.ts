@@ -57,10 +57,16 @@ export async function GET(req: NextRequest) {
             const row = rows[i];
             const content_b_encrypted = redisValues[i];
 
-            // Integrity Check: If Part A exists but Part B is missing.
+            // Integrity Check: If Part A exists but Part B is missing (Zombie Data).
             if (content_b_encrypted === null || content_b_encrypted === undefined) {
-                console.error(`[CRITICAL] Data Integrity Compromised for ID: ${row.id}`);
-                // Enterprise: Continue partial results instead of total failure to allow cleanup.
+                console.error(`[CRITICAL] Data Integrity Compromised for ID: ${row.id}. Auto-healing...`);
+
+                // Self-Healing: Delete the orphaned "Head" from Neon so it doesn't linger.
+                // We use catch() to ensure this background task doesn't crash the main request.
+                db.query('DELETE FROM vault_shards_a WHERE id = $1', [row.id]).catch(e =>
+                    console.error('Failed to auto-heal:', e)
+                );
+
                 continue;
             }
 
