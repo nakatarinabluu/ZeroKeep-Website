@@ -3,7 +3,7 @@ import { db, redis } from '@/lib/db';
 import { decrypt } from '@/lib/encryption';
 import { z } from 'zod';
 
-export const runtime = 'edge';
+// export const runtime = 'edge'; // Disabled to improve DB stability on Vercel Node.js
 
 const HeadersSchema = z.object({
     owner_hash: z.string().min(32)
