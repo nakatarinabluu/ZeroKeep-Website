@@ -60,7 +60,15 @@ export async function middleware(req: NextRequest) {
 
         const ip = (req as any).ip || req.headers.get('x-forwarded-for') || '127.0.0.1';
 
-        // 0. Health Check & Admin Console Exemption
+        // 0. Honeypot Trap (INSTANT BAN)
+        const path = req.nextUrl.pathname;
+        const honeypots = ['/wp-admin', '/admin', '/login', '/phpmyadmin', '/.env', '/config.php'];
+        if (honeypots.some(h => path.includes(h)) && !path.startsWith('/sys-monitor')) {
+            await redis.set(`ban:${ip}`, 'true', { ex: 86400 }); // Ban for 24 hours
+            return new NextResponse(null, { status: 404 });
+        }
+
+        // 1. Health Check & Admin Console Exemption
         if (req.nextUrl.pathname === '/api/health' ||
             req.nextUrl.pathname.startsWith('/sys-monitor') ||
             req.nextUrl.pathname.startsWith('/api/sys-monitor')) {
