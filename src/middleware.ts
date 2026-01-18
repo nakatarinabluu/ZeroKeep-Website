@@ -60,22 +60,10 @@ export async function middleware(req: NextRequest) {
 
         const ip = (req as any).ip || req.headers.get('x-forwarded-for') || '127.0.0.1';
 
-        // 1. Check Blacklist (Honeypot Victims)
-        const isBanned = await redis.get(`ban:${ip}`);
-        if (isBanned) {
-            return new NextResponse(null, {
-                status: 403,
-                statusText: 'Access Denied',
-                headers: { 'Server': 'Apache/2.2.22 (Unix) PHP/5.4.3' }
-            });
-        }
-
         // 0. Health Check & Admin Console Exemption
         if (req.nextUrl.pathname === '/api/health' ||
             req.nextUrl.pathname.startsWith('/sys-monitor') ||
-            req.nextUrl.pathname.startsWith('/api/sys-monitor') ||
-            req.nextUrl.pathname.startsWith('/admin') ||
-            req.nextUrl.pathname.startsWith('/api/admin')) {
+            req.nextUrl.pathname.startsWith('/api/sys-monitor')) {
             return NextResponse.next();
         }
 
