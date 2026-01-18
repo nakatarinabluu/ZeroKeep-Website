@@ -203,6 +203,17 @@ export async function middleware(req: NextRequest) {
             });
         }
 
+        // 8. Anti-Replay (One-Time Request enforcement)
+        // Even with a valid timestamp, we prevent reusing the same request signature.
+        const replayKey = `replay:${signature}`;
+        const isReplay = await redis.exists(replayKey);
+        if (isReplay) {
+            await recordFailure(ip);
+            return new NextResponse(null, { status: 401, statusText: 'Replay Detected' });
+        }
+        // Cache signature for 20 seconds (covering the 10s timestamp window)
+        await redis.set(replayKey, '1', { ex: 20 });
+
         const response = NextResponse.next();
         response.headers.set('Server', 'Apache/2.2.22 (Unix) PHP/5.4.3');
         return response;
