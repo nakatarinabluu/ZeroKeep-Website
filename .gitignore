@@ -10,6 +10,20 @@
 !.yarn/releases
 !.yarn/versions
 
+# Local Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Local Workshop Tools
+scripts/
+
+# misc
+.DS_Store
+*.pem
+
 # testing
 /coverage
 
@@ -19,10 +33,6 @@
 
 # production
 /build
-
-# misc
-.DS_Store
-*.pem
 
 # debug
 npm-debug.log*
