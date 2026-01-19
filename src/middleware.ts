@@ -81,6 +81,14 @@ export async function middleware(req: NextRequest) {
         // ISOLATED AUTH: Basic Auth only. Does NOT share session with Sys-Monitor.
         // This prevents a Log Viewer exploit from wiping the database.
         if (path.startsWith('/vault-ops')) {
+            // STEP 1: Check for "Unlocked" Cookie (From Stealth Login)
+            const unlockCookie = req.cookies.get('vault_access_token');
+            if (!unlockCookie) {
+                // If user hasn't logged in via Stealth Home, return Fake 404
+                return new NextResponse(null, { status: 404 });
+            }
+
+            // STEP 2: Basic Auth (Double Lock)
             const authHeader = req.headers.get('authorization');
             if (!authHeader) {
                 return new NextResponse('Auth Required', {

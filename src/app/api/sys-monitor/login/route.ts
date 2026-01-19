@@ -37,6 +37,15 @@ export async function POST(req: NextRequest) {
             sameSite: "strict",
         });
 
+        // 4. Set Vault Access Token (Unlocks /vault-ops/logs)
+        response.cookies.set("vault_access_token", "unlocked", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            path: "/",
+            maxAge: 60 * 15, // 15 minutes session
+            sameSite: "lax", // Lax to allow navigation from Home to Vault Ops
+        });
+
         return response;
     } catch (error) {
         return new NextResponse("Internal Server Error", { status: 500 });
