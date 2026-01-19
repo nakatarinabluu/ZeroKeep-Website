@@ -98,6 +98,14 @@ export default function AdminPage() {
                         >
                             {isLoading ? "EXECUTING..." : "☢️ WIPE ALL DATA"}
                         </button>
+
+                        <a
+                            href="/vault-ops/logs"
+                            target="_blank"
+                            className="block w-full text-center bg-blue-900/30 hover:bg-blue-800/50 text-blue-400 font-bold py-3 px-6 rounded border border-blue-800 transition-all duration-200 uppercase tracking-widest mt-4"
+                        >
+                            📊 View Crash Logs
+                        </a>
                     </div>
 
                     {message && (

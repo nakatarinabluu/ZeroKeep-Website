@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, redis } from '@/lib/db';
 import { z } from 'zod';
+import { VaultRepositoryImpl } from '@/repositories/VaultRepositoryImpl';
 
 export const runtime = 'edge';
 
@@ -22,17 +22,13 @@ export async function POST(req: NextRequest) {
 
         const { id } = result.data;
 
-        // 1. Delete from Neon (vault_shards_a)
-        const deleteFromNeon = db.query('DELETE FROM vault_shards_a WHERE id = $1', [id]);
-
-        // 2. Delete from Upstash Redis (shard_b:{id})
-        const deleteFromRedis = redis.del(`shard_b:${id}`);
-
-        // Wait for both to complete
-        await Promise.all([deleteFromNeon, deleteFromRedis]);
+        // Repository Pattern Implementation
+        const repository = new VaultRepositoryImpl();
+        await repository.delete(id);
 
         return NextResponse.json({ message: 'Deleted' }, { status: 200 });
     } catch (error) {
+        console.error('Delete Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

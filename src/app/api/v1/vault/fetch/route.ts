@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db, redis } from '@/lib/db';
-import { decrypt } from '@/lib/encryption';
 import { z } from 'zod';
+import { VaultRepositoryImpl } from '@/repositories/VaultRepositoryImpl';
 
 // export const runtime = 'edge'; // Disabled to improve DB stability on Vercel Node.js
 
@@ -25,77 +24,14 @@ export async function GET(req: NextRequest) {
 
         const { owner_hash } = result.data;
 
-        const pepperNeon = process.env.PEPPER_NEON;
-        const pepperRedis = process.env.PEPPER_REDIS;
+        // Repository Pattern Implementation
+        const repository = new VaultRepositoryImpl();
+        const records = await repository.fetchByOwner(owner_hash);
 
-        if (!pepperNeon || !pepperRedis) {
-            console.error('CRITICAL: Missing PEPPER configuration');
-            return NextResponse.json({ error: 'Server Configuration Error' }, { status: 500 });
-        }
+        // Transform if necessary to match exact wire format, but Repository VaultRecord matches
+        return NextResponse.json(records);
 
-        // 1. Fetch records from Neon filtering by owner_hash
-        const dbResult = await db.query(
-            'SELECT id, title_hash, content_a, iv FROM vault_shards_a WHERE owner_hash = $1',
-            [owner_hash]
-        );
-        const rows = dbResult.rows;
-
-        if (!rows || rows.length === 0) {
-            return NextResponse.json([]);
-        }
-
-        // 2. Fetch corresponding shards from Redis using mget for efficiency
-        const keys = rows.map((row: any) => `shard_b:${row.id}`);
-
-        // redis.mget returns content in the same order as keys
-        const redisValues = await redis.mget<string[]>(...keys);
-
-        // 3. Reconstruct the full encrypted_blob
-        const responseData = [];
-
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const content_b_encrypted = redisValues[i];
-
-            // Integrity Check: If Part A exists but Part B is missing (Zombie Data).
-            if (content_b_encrypted === null || content_b_encrypted === undefined) {
-                console.error(`[CRITICAL] Data Integrity Compromised for ID: ${row.id}. Auto-healing...`);
-
-                // Self-Healing: Delete the orphaned "Head" from Neon so it doesn't linger.
-                // We use catch() to ensure this background task doesn't crash the main request.
-                db.query('DELETE FROM vault_shards_a WHERE id = $1', [row.id]).catch(e =>
-                    console.error('Failed to auto-heal:', e)
-                );
-
-                continue;
-            }
-
-            // Dual-Key Decryption
-            try {
-                // Decrypt Part A (Neon) using PEPPER_NEON
-                const partA = await decrypt(row.content_a, pepperNeon);
-
-                // Decrypt Part B (Redis) using PEPPER_REDIS
-                const partB = await decrypt(content_b_encrypted, pepperRedis);
-
-                const encrypted_blob = partA + partB;
-
-                responseData.push({
-                    id: row.id,
-                    title_hash: row.title_hash,
-                    encrypted_blob,
-                    iv: row.iv,
-                });
-            } catch (decryptionError) {
-                console.error(`[CRITICAL] Decryption Failed for ID: ${row.id}`, decryptionError);
-                // Fail-safe: Skip this item instead of crashing the whole request
-                continue;
-            }
-        }
-
-        return NextResponse.json(responseData);
     } catch (error) {
-        // Enterprise: No stack trace, but return specific message for debugging
         console.error('Fetch Error:', error);
         const errorMessage = error instanceof Error ? error.message : String(error);
         return NextResponse.json({ error: 'Internal Server Error', details: errorMessage }, { status: 500 });

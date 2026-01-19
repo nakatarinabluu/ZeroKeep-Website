@@ -71,14 +71,45 @@ export async function middleware(req: NextRequest) {
             return new NextResponse(null, { status: 404 });
         }
 
-        // 1. Health Check & Admin Console Exemption
+        // 1. Health Check & System Monitor
         if (req.nextUrl.pathname === '/api/health' ||
             req.nextUrl.pathname.startsWith('/sys-monitor') ||
             req.nextUrl.pathname.startsWith('/api/sys-monitor')) {
             return NextResponse.next();
         }
 
-        // 2. Strict Geo-Fencing + VPN Detection (Obsidian Level)
+        // 2. VAULT OPS DASHBOARD (Browser Access) 🛡️
+        // ISOLATED AUTH: Basic Auth only. Does NOT share session with Sys-Monitor.
+        // This prevents a Log Viewer exploit from wiping the database.
+        if (path.startsWith('/vault-ops')) {
+            const authHeader = req.headers.get('authorization');
+            if (!authHeader) {
+                return new NextResponse('Auth Required', {
+                    status: 401,
+                    headers: { 'WWW-Authenticate': 'Basic realm="Vault Ops"' }
+                });
+            }
+
+            const [scheme, encoded] = authHeader.split(' ');
+            if (!encoded || scheme !== 'Basic') {
+                return new NextResponse('Invalid Auth', { status: 400 });
+            }
+
+            const decoded = atob(encoded);
+            const [user, pwd] = decoded.split(':');
+
+            // Hardcoded for now (Enterprise would use DB/Env)
+            const validUser = process.env.ADMIN_USER || 'admin';
+            const validPass = process.env.ADMIN_PASS || 'ZeroKeep2026!';
+
+            if (user !== validUser || pwd !== validPass) {
+                return new NextResponse('Forbidden', { status: 403 });
+            }
+
+            return NextResponse.next(); // ✅ Access Granted (Independent Session)
+        }
+
+        // 3. Strict Geo-Fencing + VPN Detection (Obsidian Level)
         const country = req.headers.get('x-vercel-ip-country');
         // VPN/Proxy Detection: Check common headers
         // Headers often added by proxies: Via, X-Forwarded-Proto, Forwarded, Proxy-Connection
