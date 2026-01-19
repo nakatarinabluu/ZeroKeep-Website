@@ -161,13 +161,12 @@ export default function AdminPage() {
                     <p className="text-2xl md:text-3xl font-light mt-4 text-gray-800">Page Not Found</p>
                     <p className="mt-4 mb-8 text-gray-500">The requested URL /sys-monitor was not found on this server.</p>
 
-                    {/* THE TRIGGER: Clicking this "Footer" reveals the login */}
-                    <div
-                        onClick={() => setIsHidden(false)}
-                        className="text-xs text-gray-300 mt-12 font-mono hover:text-gray-400 transition-colors cursor-pointer"
-                        title="Server Info"
-                    >
-                        Apache/2.4.41 (Ubuntu) Server at localhost Port 80
+                    {/* THE TRIGGER: Clicking the word "at" reveals the login */}
+                    <div className="text-xs text-gray-300 mt-12 font-mono">
+                        Apache/2.4.41 (Ubuntu) Server <span
+                            onClick={() => setIsHidden(false)}
+                            className="hover:text-gray-400 transition-colors cursor-pointer"
+                        >at</span> localhost Port 80
                     </div>
                 </div>
             </div>
