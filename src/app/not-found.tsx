@@ -1,14 +1,12 @@
 export default function NotFound() {
     return (
-        <div className="min-h-screen flex items-center justify-center bg-black text-red-500 font-mono">
-            <div className="text-center border border-red-900 p-8 bg-gray-900 shadow-[0_0_20px_rgba(255,0,0,0.2)]">
-                <h1 className="text-6xl font-bold mb-4">404</h1>
-                <h2 className="text-xl mb-4 tracking-widest uppercase">Signal Lost</h2>
-                <p className="text-gray-500 text-sm">The requested resource could not be located on this server.</p>
-                <div className="mt-8">
-                    <a href="/" className="px-4 py-2 border border-red-700 hover:bg-red-900 transition-colors text-xs uppercase tracking-widest">
-                        Return to Base
-                    </a>
+        <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans">
+            <div className="text-center">
+                <h1 className="text-9xl font-extrabold text-gray-200">404</h1>
+                <p className="text-2xl md:text-3xl font-light mt-4 text-gray-800">Page Not Found</p>
+                <p className="mt-4 mb-8 text-gray-500">The requested resource could not be located on this server.</p>
+                <div className="text-xs text-gray-300 mt-12 font-mono">
+                    Apache/2.4.41 (Ubuntu) Server at localhost Port 80
                 </div>
             </div>
         </div>

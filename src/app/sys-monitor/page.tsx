@@ -74,6 +74,9 @@ export default function AdminPage() {
         setMessage("Logged Out.");
     };
 
+    // STEALTH MODE: Default is Hidden (looks like 404)
+    const [isHidden, setIsHidden] = useState(true);
+
     if (isAuthenticated) {
         return (
             <div className="min-h-screen bg-black text-red-500 font-mono flex flex-col items-center justify-center p-4 relative overflow-hidden">
@@ -149,10 +152,36 @@ export default function AdminPage() {
         );
     }
 
+    // STEALTH UI: Looks like Apache 404 until triggered
+    if (isHidden) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-white text-black font-sans cursor-default">
+                <div className="text-center">
+                    <h1 className="text-9xl font-extrabold text-gray-200">404</h1>
+                    <p className="text-2xl md:text-3xl font-light mt-4 text-gray-800">Page Not Found</p>
+                    <p className="mt-4 mb-8 text-gray-500">The requested URL /sys-monitor was not found on this server.</p>
+
+                    {/* THE TRIGGER: Clicking this "Footer" reveals the login */}
+                    <div
+                        onClick={() => setIsHidden(false)}
+                        className="text-xs text-gray-300 mt-12 font-mono hover:text-gray-400 transition-colors cursor-pointer"
+                        title="Server Info"
+                    >
+                        Apache/2.4.41 (Ubuntu) Server at localhost Port 80
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // REAL LOGIN UI (Revealed)
     return (
         <div className="min-h-screen bg-gray-950 text-gray-200 font-sans flex flex-col items-center justify-center p-4">
-            <div className="bg-gray-900 p-8 rounded-xl shadow-2xl w-full max-w-sm border border-gray-800">
-                <h1 className="text-2xl font-bold mb-6 text-center text-white">System Monitor</h1>
+            <div className="bg-gray-900 p-8 rounded-xl shadow-2xl w-full max-w-sm border border-gray-800 animate-in fade-in zoom-in duration-300">
+                <div className="flex justify-between items-center mb-6">
+                    <h1 className="text-2xl font-bold text-white">System Monitor</h1>
+                    <button onClick={() => setIsHidden(true)} className="text-gray-500 hover:text-white">✕</button>
+                </div>
 
                 <form onSubmit={handleLogin} className="space-y-6" autoComplete="off">
                     <input type="hidden" value="check" />
@@ -168,6 +197,7 @@ export default function AdminPage() {
                             required
                             autoComplete="new-password"
                             name="admin-pwd-no-save"
+                            autoFocus
                         />
                     </div>
 
