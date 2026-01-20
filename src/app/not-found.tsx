@@ -115,8 +115,8 @@ export default function NotFound() {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: '#fff',
-                color: '#000'
+                backgroundColor: '#000',
+                color: '#fff'
             }}>
                 {/* Stealth Hint: Ctrl+Shift+L to login */}
                 <div>
@@ -128,7 +128,7 @@ export default function NotFound() {
                         fontSize: '24px',
                         fontWeight: 500,
                         verticalAlign: 'top',
-                        borderRight: '1px solid rgba(0, 0, 0, .3)'
+                        borderRight: '1px solid rgba(255, 255, 255, .3)'
                     }}>
                         404
                     </h1>
