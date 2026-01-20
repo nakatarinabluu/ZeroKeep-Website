@@ -26,4 +26,10 @@ export interface IVaultRepository {
      * Wipes all data for a user (Optional/Advanced)
      */
     wipeByOwner(ownerHash: string): Promise<void>;
+
+    /**
+     * Reorders a batch of items.
+     * @param items List of objects containing { id, order }.
+     */
+    reorder(items: { id: string; order: number }[]): Promise<void>;
 }

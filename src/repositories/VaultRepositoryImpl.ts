@@ -19,7 +19,7 @@ export class VaultRepositoryImpl implements IVaultRepository {
         this.pepperRedis = redisPepper;
     }
 
-    async save(id: string, ownerHash: string, titleHash: string, encryptedBlob: string, iv: string): Promise<void> {
+    async save(id: string, ownerHash: string, titleHash: string, encryptedBlob: string, iv: string, orderIndex: number = 0): Promise<void> {
         // 1. Split the original encrypted_blob
         const mid = Math.floor(encryptedBlob.length / 2);
         const rawPartA = encryptedBlob.slice(0, mid);
@@ -33,8 +33,8 @@ export class VaultRepositoryImpl implements IVaultRepository {
 
         // 3. Save Part A to Neon
         const saveToNeon = db.query(
-            'INSERT INTO vault_shards_a (id, owner_hash, title_hash, content_a, iv) VALUES ($1, $2, $3, $4, $5)',
-            [id, ownerHash, titleHash, content_a, iv]
+            'INSERT INTO vault_shards_a (id, owner_hash, title_hash, content_a, iv, order_index) VALUES ($1, $2, $3, $4, $5, $6)',
+            [id, ownerHash, titleHash, content_a, iv, orderIndex]
         );
 
         // 4. Save Part B to Redis
@@ -47,7 +47,7 @@ export class VaultRepositoryImpl implements IVaultRepository {
     async fetchByOwner(ownerHash: string): Promise<VaultRecord[]> {
         // 1. Fetch Part A from Neon
         const dbResult = await db.query(
-            'SELECT id, title_hash, content_a, iv FROM vault_shards_a WHERE owner_hash = $1',
+            'SELECT id, title_hash, content_a, iv FROM vault_shards_a WHERE owner_hash = $1 ORDER BY order_index ASC',
             [ownerHash]
         );
         const rows = dbResult.rows;
@@ -121,5 +121,26 @@ export class VaultRepositoryImpl implements IVaultRepository {
         const deleteFromRedis = Promise.all(redisKeys.map((k: string) => redis.del(k)));
 
         await Promise.all([deleteFromNeon, deleteFromRedis]);
+    }
+
+    async reorder(items: { id: string; order: number }[]): Promise<void> {
+        // Efficient Batch Update using a Single Query with CASE or unnest
+        // Since we are using neondatabase/serverless, standard Postgres features work.
+        // Using a transaction is safest.
+
+        if (items.length === 0) return;
+
+        // Construct a giant CASE statement or use individual updates in Promise.all?
+        // Promise.all is easier to read and likely fine for < 100 items.
+        // For "Military Grade" let's try to be atomic, but individual updates are acceptable for MVP.
+
+        // Let's use individual updates for simplicity and minimal risk of SQL injection errors manually constructing query strings.
+        // db.query already parameterizes.
+
+        const updates = items.map(item =>
+            db.query('UPDATE vault_shards_a SET order_index = $1 WHERE id = $2', [item.order, item.id])
+        );
+
+        await Promise.all(updates);
     }
 }
