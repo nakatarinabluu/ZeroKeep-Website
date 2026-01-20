@@ -121,34 +121,31 @@ export default function Home() {
         position: 'fixed',
         left: 0,
         top: 0,
-        width: '100%',
-        zIndex: 9999,
+        width: '100vw',
+        zIndex: 2147483647, // Max Int to cover everything
       }}>
         {/* Stealth Hint: Ctrl+Shift+L to login */}
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <h1 style={{
-            display: 'inline-block',
             margin: 0,
             marginRight: '20px',
             padding: '10px 23px 10px 0',
             fontSize: '24px',
             fontWeight: 500,
-            verticalAlign: 'top',
             borderRight: '1px solid rgba(255, 255, 255, .3)'
           }}>
             404
           </h1>
           <div style={{
-            display: 'inline-block',
             textAlign: 'left',
             lineHeight: '49px',
             height: '49px',
-            verticalAlign: 'middle'
+            display: 'flex',
+            alignItems: 'center'
           }}>
             <h2 style={{
               fontSize: '14px',
               fontWeight: 400,
-              lineHeight: 'inherit',
               margin: 0,
               padding: 0
             }}>
