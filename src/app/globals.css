@@ -10,6 +10,20 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Android Brand Colors */
+  --color-midnight-blue: #04326E;
+  /* OceanBlue (Primary) */
+  --color-sky-blue: #2D8CFF;
+  /* SkyBlue (Secondary) */
+  --color-dark-navy: #0F172A;
+  /* DarkBackground */
+  --color-soft-cloud: #F4F6F8;
+  /* App Background (Light) */
+  --color-pure-white: #FFFFFF;
+  /* Surface Whites */
+  --color-text-primary: #1A1C1E;
+  /* Main Text */
 }
 
 @media (prefers-color-scheme: dark) {

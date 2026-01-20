@@ -37,13 +37,13 @@ export default async function SecurityCenterPage({ searchParams }: { searchParam
     const auditLogs = auditRes.rows;
 
     return (
-        <div className="p-8 bg-gray-900 min-h-screen font-mono text-gray-300">
+        <div className="p-8 bg-soft-cloud min-h-screen font-mono text-gray-700">
             <header className="mb-8 flex justify-between items-center border-b border-gray-800 pb-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white tracking-widest flex items-center gap-3">
+                    <h1 className="text-3xl font-bold text-midnight-blue tracking-widest flex items-center gap-3">
                         🛡️ SECURITY OPERATIONS
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">Global System Overwatch</p>
+                    <p className="text-sky-blue text-sm mt-1">Global System Overwatch</p>
                 </div>
                 <div className="flex gap-2">
                     <a href="/vault-ops/logs?tab=crashes" className={cn("px-4 py-2 rounded transition-all", tab === 'crashes' ? "bg-red-900/50 text-red-200 border border-red-700" : "hover:bg-gray-800")}>
@@ -55,11 +55,11 @@ export default async function SecurityCenterPage({ searchParams }: { searchParam
                 </div>
             </header>
 
-            <div className="bg-gray-950 border border-gray-800 rounded-lg overflow-hidden shadow-2xl">
+            <div className="bg-pure-white border border-gray-200 rounded-lg overflow-hidden shadow-xl">
                 {/* --- CRASH LOGS --- */}
                 {tab === 'crashes' && (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-900 text-gray-400 font-bold border-b border-gray-800 uppercase">
+                        <thead className="bg-gray-100 text-midnight-blue font-bold border-b border-gray-200 uppercase">
                             <tr>
                                 <th className="p-4">Time</th>
                                 <th className="p-4">Device</th>
@@ -69,11 +69,11 @@ export default async function SecurityCenterPage({ searchParams }: { searchParam
                         </thead>
                         <tbody className="divide-y divide-gray-800">
                             {crashLogs.map((log: any) => (
-                                <tr key={log.id} className="hover:bg-gray-900/50 transition">
-                                    <td className="p-4 whitespace-nowrap text-gray-400">
+                                <tr key={log.id} className="hover:bg-soft-cloud transition">
+                                    <td className="p-4 whitespace-nowrap text-gray-600">
                                         {new Date(parseInt(log.timestamp)).toLocaleString()}
                                     </td>
-                                    <td className="p-4 font-bold text-white">{log.device}</td>
+                                    <td className="p-4 font-bold text-midnight-blue">{log.device}</td>
                                     <td className="p-4">
                                         <Badge variant="error">{log.exception}</Badge>
                                     </td>
@@ -96,7 +96,7 @@ export default async function SecurityCenterPage({ searchParams }: { searchParam
                 {/* --- AUDIT LOGS --- */}
                 {tab === 'audit' && (
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-900 text-gray-400 font-bold border-b border-gray-800 uppercase">
+                        <thead className="bg-gray-100 text-midnight-blue font-bold border-b border-gray-200 uppercase">
                             <tr>
                                 <th className="p-4">Time</th>
                                 <th className="p-4">Event</th>
@@ -107,11 +107,11 @@ export default async function SecurityCenterPage({ searchParams }: { searchParam
                         </thead>
                         <tbody className="divide-y divide-gray-800">
                             {auditLogs.map((log: any) => (
-                                <tr key={log.id} className="hover:bg-gray-900/50 transition">
-                                    <td className="p-4 whitespace-nowrap text-gray-400">
+                                <tr key={log.id} className="hover:bg-soft-cloud transition">
+                                    <td className="p-4 whitespace-nowrap text-gray-600">
                                         {new Date(log.created_at).toLocaleString()}
                                     </td>
-                                    <td className="p-4 font-bold text-white tracking-wide">
+                                    <td className="p-4 font-bold text-midnight-blue tracking-wide">
                                         {log.action}
                                     </td>
                                     <td className="p-4">

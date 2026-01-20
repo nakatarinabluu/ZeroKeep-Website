@@ -73,19 +73,19 @@ export default function Home() {
 
   if (isAuthenticated) {
     return (
-      <div className="min-h-screen bg-black text-red-500 font-mono flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen bg-soft-cloud text-red-500 font-mono flex flex-col items-center justify-center p-4 relative overflow-hidden">
         {/* Logged In View (Preserved) */}
-        <div className="border border-red-800 p-8 rounded-lg max-w-md w-full bg-gray-900 shadow-[0_0_20px_rgba(255,0,0,0.5)] z-10">
+        <div className="border border-red-200 p-8 rounded-lg max-w-md w-full bg-pure-white shadow-xl z-10">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-2xl font-bold glitch-effect">SUPER USER</h1>
-            <button onClick={handleLogout} className="text-xs border border-red-700 p-2 hover:bg-red-900 transition-colors">[ SIGN OUT ]</button>
+            <h1 className="text-2xl font-bold glitch-effect text-midnight-blue">SUPER USER</h1>
+            <button onClick={handleLogout} className="text-xs border border-red-300 text-red-600 p-2 hover:bg-red-50 transition-colors">[ SIGN OUT ]</button>
           </div>
-          <p className="text-green-500 mb-8 text-center typewriter">Identity Verified. Command Ready.</p>
+          <p className="text-green-600 mb-8 text-center typewriter bg-green-50 p-2 rounded">Identity Verified. Command Ready.</p>
           <div className="space-y-4">
-            <button onClick={handleWipeRequest} disabled={isLoading} className="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-4 px-6 rounded border-2 border-red-500 shadow-[0_0_15px_rgba(255,0,0,0.7)] transition-all duration-200 uppercase tracking-widest">{isLoading ? "EXECUTING..." : "☢️ WIPE ALL DATA"}</button>
-            <a href="/vault-ops/logs" target="_blank" className="block w-full text-center bg-blue-900/30 hover:bg-blue-800/50 text-blue-400 font-bold py-3 px-6 rounded border border-blue-800 transition-all duration-200 uppercase tracking-widest mt-4">📊 View Crash Logs</a>
+            <button onClick={handleWipeRequest} disabled={isLoading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded border-2 border-red-500 shadow-lg transition-all duration-200 uppercase tracking-widest">{isLoading ? "EXECUTING..." : "☢️ WIPE ALL DATA"}</button>
+            <a href="/vault-ops/logs" target="_blank" className="block w-full text-center bg-white hover:bg-sky-blue text-sky-blue hover:text-white font-bold py-3 px-6 rounded border border-sky-blue transition-all duration-200 uppercase tracking-widest mt-4">📊 View Crash Logs</a>
           </div>
-          {message && <div className="mt-6 p-4 border border-gray-700 bg-black text-center text-sm">{message}</div>}
+          {message && <div className="mt-6 p-4 border border-gray-200 bg-gray-50 text-center text-sm text-gray-700">{message}</div>}
         </div>
         {showConfirm && (
           <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
@@ -106,8 +106,8 @@ export default function Home() {
   // STEALTH UI: MIDNIGHT BLUE THEME
   if (isHidden) {
     return (
-      // Main Background: App Theme #04326E
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#04326E] text-white font-sans cursor-default select-none p-4">
+      // Main Background: App Theme SoftCloud (Light)
+      <div className="min-h-screen flex flex-col items-center justify-center bg-soft-cloud text-midnight-blue font-sans cursor-default select-none p-4">
 
         <div className="text-center max-w-lg">
           {/* Animated Gear: White with low opacity */}
@@ -115,7 +115,7 @@ export default function Home() {
             ⚙️
           </div>
 
-          <h1 className="text-4xl font-light mb-4 text-blue-100 tracking-tight">
+          <h1 className="text-4xl font-light mb-4 text-midnight-blue tracking-tight">
             System Maintenance
           </h1>
 
@@ -124,7 +124,7 @@ export default function Home() {
             <div className="h-full bg-blue-400 w-1/2 rounded-full animate-pulse"></div>
           </div>
 
-          <p className="text-blue-200 mb-12 leading-relaxed">
+          <p className="text-sky-blue mb-12 leading-relaxed">
             The ZeroKeep secure environment is updating.
             <br />
             Access is temporarily restricted.
@@ -137,7 +137,7 @@ export default function Home() {
             <div className="h-3 w-3 bg-blue-300 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
           </div>
 
-          <div className="text-xs text-blue-400/50 mt-20 font-mono uppercase tracking-widest">
+          <div className="text-xs text-sky-blue/50 mt-20 font-mono uppercase tracking-widest">
             &copy; 2026 ZeroKeep Inc.
           </div>
         </div>
@@ -147,23 +147,23 @@ export default function Home() {
 
   // REAL LOGIN UI (Revealed)
   return (
-    <div className="min-h-screen bg-[#021a3a] text-gray-200 font-sans flex flex-col items-center justify-center p-4">
-      <div className="bg-[#04326E] p-8 rounded-xl shadow-2xl w-full max-w-sm border border-blue-800 animate-in fade-in zoom-in duration-300">
+    <div className="min-h-screen bg-soft-cloud text-gray-800 font-sans flex flex-col items-center justify-center p-4">
+      <div className="bg-pure-white p-8 rounded-xl shadow-2xl w-full max-w-sm border border-gray-200 animate-in fade-in zoom-in duration-300">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-white">System Monitor</h1>
-          <button onClick={() => setIsHidden(true)} className="text-blue-300 hover:text-white">✕</button>
+          <h1 className="text-2xl font-bold text-midnight-blue">System Monitor</h1>
+          <button onClick={() => setIsHidden(true)} className="text-gray-400 hover:text-midnight-blue">✕</button>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6" autoComplete="off">
           <input type="hidden" value="check" />
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-blue-200">Admin Password</label>
+            <label className="block text-sm font-medium mb-2 text-midnight-blue">Admin Password</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 bg-[#021a3a] border border-blue-700 rounded text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition"
+              className="w-full p-3 bg-gray-50 border border-gray-300 rounded text-gray-900 focus:border-sky-blue focus:ring-1 focus:ring-sky-blue outline-none transition"
               placeholder="Enter Password"
               required
               autoComplete="new-password"
@@ -173,12 +173,12 @@ export default function Home() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2 text-blue-200">2FA Code</label>
+            <label className="block text-sm font-medium mb-2 text-midnight-blue">2FA Code</label>
             <input
               type="text"
               value={totp}
               onChange={(e) => setTotp(e.target.value)}
-              className="w-full p-3 bg-[#021a3a] border border-blue-700 rounded text-white focus:border-blue-400 focus:ring-1 focus:ring-blue-400 outline-none transition font-mono tracking-widest text-center"
+              className="w-full p-3 bg-gray-50 border border-gray-300 rounded text-gray-900 focus:border-sky-blue focus:ring-1 focus:ring-sky-blue outline-none transition font-mono tracking-widest text-center"
               placeholder="000 000"
               maxLength={6}
               required
@@ -189,7 +189,7 @@ export default function Home() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded transition-colors shadow-lg"
+            className="w-full bg-midnight-blue hover:bg-sky-blue text-white font-bold py-3 px-4 rounded transition-colors shadow-lg"
           >
             {isLoading ? "Verifying..." : "Authenticate"}
           </button>
