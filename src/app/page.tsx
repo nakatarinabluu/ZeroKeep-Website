@@ -110,34 +110,43 @@ export default function Home() {
       // Mimics default Next.js 404 page style exactly
       <div style={{
         fontFamily: 'system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji"',
-        height: '100vh',
-        textAlign: 'center',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         backgroundColor: '#000',
         color: '#fff',
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        width: '100vw',
-        zIndex: 2147483647, // Max Int to cover everything
+        zIndex: 2147483647,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: 0,
+        padding: 0,
+        overflow: 'hidden'
       }}>
         {/* Stealth Hint: Ctrl+Shift+L to login */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          whiteSpace: 'nowrap', // FORCE SINGLE LINE
+          flexWrap: 'nowrap',
+          minWidth: 'max-content'
+        }}>
           <h1 style={{
             margin: 0,
-            marginRight: '20px',
-            padding: '10px 23px 10px 0',
+            padding: '0 23px 0 0',
             fontSize: '24px',
             fontWeight: 500,
-            borderRight: '1px solid rgba(255, 255, 255, .3)'
+            borderRight: '1px solid rgba(255, 255, 255, .3)',
+            lineHeight: '49px'
           }}>
             404
           </h1>
           <div style={{
-            textAlign: 'left',
+            paddingLeft: '23px',
             lineHeight: '49px',
             height: '49px',
             display: 'flex',
