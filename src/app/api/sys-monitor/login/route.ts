@@ -1,53 +1,85 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authenticator } from "@otplib/preset-default";
+import { z } from "zod";
+import { logAuditAction } from "@/lib/audit";
+
+// Strict Schema for Input Validation
+const LoginSchema = z.object({
+    password: z.string().min(8).max(100), // Prevent buffer overflow attacks
+    totp: z.string().length(6).regex(/^\d+$/, "TOTP must be 6 digits"), // Strict numeric check
+});
 
 export async function POST(req: NextRequest) {
+    const ip = req.headers.get("x-forwarded-for") || "unknown";
+
     try {
-        const { password, totp } = await req.json();
+        // 0. Input Validation (Zod)
+        const body = await req.json();
+        const validationResult = LoginSchema.safeParse(body);
+
+        if (!validationResult.success) {
+            await logAuditAction("LOGIN_ATTEMPT", "FAILURE", ip, { reason: "Invalid Input Format", errors: validationResult.error.format() });
+            return new NextResponse("Invalid Request Format", { status: 400 });
+        }
+
+        const { password, totp } = validationResult.data;
+
+        await logAuditAction("LOGIN_ATTEMPT", "INFO", ip);
 
         const envPassword = process.env.ADMIN_PASSWORD;
         const envSecret = process.env.ADMIN_TOTP_SECRET;
 
+        // 1. Config Check
         if (!envPassword || !envSecret) {
-            return new NextResponse("Server Configuration Error: Missing Admin Envs", { status: 500 });
+            console.error("Missing Admin Envs");
+            return new NextResponse("Server Configuration Error", { status: 500 });
         }
 
-        // 1. Check Password
+        // 2. Password Check
         if (password !== envPassword) {
-            return new NextResponse("Invalid Password", { status: 401 });
+            await logAuditAction("LOGIN_FAILED", "WARNING", ip, { reason: "Bad Password" });
+            return new NextResponse("Invalid Credentials", { status: 401 });
         }
 
-        // 2. Check TOTP
+        // 3. TOTP Check
         try {
             const isValid = authenticator.check(totp, envSecret);
             if (!isValid) {
-                return new NextResponse("Invalid TOTP Code", { status: 401 });
+                await logAuditAction("LOGIN_FAILED", "WARNING", ip, { reason: "Bad TOTP" });
+                return new NextResponse("Invalid Credentials", { status: 401 });
             }
         } catch (e) {
-            return new NextResponse("TOTP Validation Error", { status: 400 });
+            await logAuditAction("LOGIN_FAILED", "FAILURE", ip, { reason: "TOTP Error" });
+            return new NextResponse("Authentication Error", { status: 400 });
         }
 
-        // 3. Set Session Cookie
+        // 4. Success -> Log & Cookie
+        await logAuditAction("LOGIN_SUCCESS", "SUCCESS", ip);
+
         const response = new NextResponse("Authenticated", { status: 200 });
+
+        // Admin Session (Strict)
         response.cookies.set("admin_session", "valid_super_user", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             path: "/",
-            maxAge: 60 * 15, // 15 minutes session
+            maxAge: 60 * 15, // 15 mins
             sameSite: "strict",
         });
 
-        // 4. Set Vault Access Token (Unlocks /vault-ops/logs)
+        // Vault Access (Lax)
         response.cookies.set("vault_access_token", "unlocked", {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             path: "/",
-            maxAge: 60 * 15, // 15 minutes session
-            sameSite: "lax", // Lax to allow navigation from Home to Vault Ops
+            maxAge: 60 * 15, // 15 mins
+            sameSite: "lax",
         });
 
         return response;
     } catch (error) {
+        console.error("Login Error:", error);
+        await logAuditAction("LOGIN_FAILED", "FAILURE", ip, { reason: "Internal Server Exception" });
         return new NextResponse("Internal Server Error", { status: 500 });
     }
 }

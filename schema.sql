@@ -18,3 +18,13 @@ CREATE TABLE IF NOT EXISTS crash_logs (
   stacktrace TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Table: audit_logs
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  action TEXT NOT NULL,       -- e.g., 'LOGIN_SUCCESS', 'LOGIN_FAILED', 'VIEW_VAULT'
+  actor_ip TEXT NOT NULL,     -- IP Address of the user
+  status TEXT NOT NULL,       -- 'SUCCESS', 'FAILURE', 'WARNING'
+  metadata TEXT,              -- JSON string for extra details (e.g., failed password attempt count)
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
