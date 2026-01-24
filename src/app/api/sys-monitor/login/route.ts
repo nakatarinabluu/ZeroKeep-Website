@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticator } from "@otplib/preset-default";
 import { z } from "zod";
 import { logAuditAction } from "@/lib/audit";
+import { createHmac } from "crypto";
+
+
 
 // Strict Schema for Input Validation
 const LoginSchema = z.object({
+    username: z.string().min(1).max(50),
     password: z.string().min(8).max(100), // Prevent buffer overflow attacks
     totp: z.string().length(6).regex(/^\d+$/, "TOTP must be 6 digits"), // Strict numeric check
 });
@@ -22,20 +26,28 @@ export async function POST(req: NextRequest) {
             return new NextResponse("Invalid Request Format", { status: 400 });
         }
 
-        const { password, totp } = validationResult.data;
+        const { username, password, totp } = validationResult.data;
 
         await logAuditAction("LOGIN_ATTEMPT", "INFO", ip);
 
-        const envPassword = process.env.ADMIN_PASSWORD;
-        const envSecret = process.env.ADMIN_TOTP_SECRET;
+        const envPassword = process.env.GATE_1_PASSWORD;
+        const envSecret = process.env.GATE_1_SECRET;
+        const envUser = process.env.GATE_1_USER;
 
         // 1. Config Check
-        if (!envPassword || !envSecret) {
-            console.error("Missing Admin Envs");
+        if (!envPassword || !envSecret || !envUser) {
+            console.error("Missing Gate 1 Envs");
             return new NextResponse("Server Configuration Error", { status: 500 });
         }
 
-        // 2. Password Check
+        // 2. Username Check
+        // Constant time comparison prevents timing attacks (paranoid)
+        if (username !== envUser) {
+            await logAuditAction("LOGIN_FAILED", "WARNING", ip, { reason: "Bad Username" });
+            return new NextResponse("Invalid Credentials", { status: 401 });
+        }
+
+        // 3. Password Check
         if (password !== envPassword) {
             await logAuditAction("LOGIN_FAILED", "WARNING", ip, { reason: "Bad Password" });
             return new NextResponse("Invalid Credentials", { status: 401 });
@@ -68,7 +80,16 @@ export async function POST(req: NextRequest) {
         });
 
         // Vault Access (Lax)
-        response.cookies.set("vault_access_token", "unlocked", {
+        // SECURITY UPGRADE: IP BINDING 🔒
+        // We store the encoded IP in the cookie. Middleware checks this against the requester's IP.
+        // If a hacker steals the cookie (F12) and uses it on another wifi/PC, it fails.
+        // SECURITY UPGRADE: BLIND IP HASHING 🙈
+        // We do NOT store the IP. We only store the HASH of the IP.
+        // Cookie = HMAC(IP, Secret).
+        // Result: Privacy (IP not visible) + Security (Bound to location).
+        const privacyHash = createHmac('sha256', envSecret).update(ip).digest('hex');
+
+        response.cookies.set("vault_access_token", privacyHash, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             path: "/",

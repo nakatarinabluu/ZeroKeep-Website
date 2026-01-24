@@ -3,12 +3,11 @@
 import { useState, useEffect } from "react";
 
 export default function NotFound() {
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [totp, setTotp] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState("");
-    const [showConfirm, setShowConfirm] = useState(false);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -18,11 +17,12 @@ export default function NotFound() {
             const res = await fetch("/api/sys-monitor/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password, totp }),
+                body: JSON.stringify({ username, password, totp }),
             });
             if (res.ok) {
-                setIsAuthenticated(true);
-                setMessage("Access Granted.");
+                // Direct Redirect - Skip "Super User" Screen
+                setMessage("Access Granted. Redirecting...");
+                window.location.href = "/vault-ops/logs";
             } else {
                 const error = await res.text();
                 setMessage(`Access Denied: ${error}`);
@@ -34,75 +34,19 @@ export default function NotFound() {
         }
     };
 
-    const handleWipeRequest = () => setShowConfirm(true);
-
-    const executeWipe = async () => {
-        setShowConfirm(false);
-        setIsLoading(true);
-        setMessage("Initiating Wipe Protocol...");
-        try {
-            const res = await fetch("/api/sys-monitor/wipe", { method: "POST" });
-            if (res.ok) setMessage("✅ SYSTEM PURGED. Vault is empty.");
-            else setMessage("❌ WIPE FAILED. Check logs.");
-        } catch (err) {
-            setMessage("❌ Network Error during Wipe.");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleLogout = async () => {
-        try { await fetch("/api/sys-monitor/logout", { method: "POST" }); } catch (e) { }
-        setIsAuthenticated(false);
-        setPassword("");
-        setTotp("");
-        setMessage("Logged Out.");
-    };
-
     // STEALTH MODE
     const [isHidden, setIsHidden] = useState(true);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
+            // Ctrl + Shift + L to Reveal Login
             if (e.ctrlKey && e.shiftKey && e.key === 'L') setIsHidden(prev => !prev);
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
-    if (isAuthenticated) {
-        return (
-            <div className="min-h-screen bg-soft-cloud text-red-500 font-mono flex flex-col items-center justify-center p-4 relative overflow-hidden">
-                {/* Logged In View (Preserved) */}
-                <div className="border border-red-200 p-8 rounded-lg max-w-md w-full bg-pure-white shadow-xl z-10">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-2xl font-bold glitch-effect text-midnight-blue">SUPER USER</h1>
-                        <button onClick={handleLogout} className="text-xs border border-red-300 text-red-600 p-2 hover:bg-red-50 transition-colors">[ SIGN OUT ]</button>
-                    </div>
-                    <p className="text-green-600 mb-8 text-center typewriter bg-green-50 p-2 rounded">Identity Verified. Command Ready.</p>
-                    <div className="space-y-4">
-                        <button onClick={handleWipeRequest} disabled={isLoading} className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded border-2 border-red-500 shadow-lg transition-all duration-200 uppercase tracking-widest">{isLoading ? "EXECUTING..." : "☢️ WIPE ALL DATA"}</button>
-                        <a href="/vault-ops/logs" target="_blank" className="block w-full text-center bg-white hover:bg-sky-blue text-sky-blue hover:text-white font-bold py-3 px-6 rounded border border-sky-blue transition-all duration-200 uppercase tracking-widest mt-4">📊 View Crash Logs</a>
-                    </div>
-                    {message && <div className="mt-6 p-4 border border-gray-200 bg-gray-50 text-center text-sm text-gray-700">{message}</div>}
-                </div>
-                {showConfirm && (
-                    <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 backdrop-blur-sm">
-                        <div className="border-2 border-red-600 bg-gray-950 p-8 rounded-xl shadow-[0_0_50px_rgba(255,0,0,0.5)] max-w-sm w-full text-center">
-                            <h2 className="text-3xl font-extrabold text-red-500 mb-4 tracking-tighter">⛔ WARNING ⛔</h2>
-                            <p className="text-gray-300 mb-6 text-sm leading-relaxed">This action is <span className="text-red-500 font-bold">IRREVERSIBLE</span>.<br /><br />All secrets, keys, and backups will be permanently destroyed.<br /><br />Are you absolutely sure?</p>
-                            <div className="flex space-x-4">
-                                <button onClick={() => setShowConfirm(false)} className="flex-1 py-3 border border-gray-600 text-gray-400 hover:bg-gray-800 hover:text-white rounded transition-colors uppercase font-bold text-sm">Cancel</button>
-                                <button onClick={executeWipe} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded shadow-lg transition-transform hover:scale-105 uppercase font-bold text-sm">YES, WIPE IT</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    // STEALTH UI: MIDNIGHT BLUE THEME
+    // 1. STEALTH UI: FAKE 404 (Default View)
     if (isHidden) {
         return (
             // Fake 404 Page (Stealth Mode)
@@ -166,7 +110,7 @@ export default function NotFound() {
         );
     }
 
-    // REAL LOGIN UI (Revealed - Dark Mode / Next.js Style)
+    // 2. REAL LOGIN UI (Revealed - Dark Mode)
     return (
         <div style={{
             minHeight: '100vh',
@@ -197,6 +141,30 @@ export default function NotFound() {
                     <input type="hidden" value="check" />
 
                     <div style={{ marginBottom: '1rem' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#888' }}>Username</label>
+                        <input
+                            type="text"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            style={{
+                                width: '100%',
+                                padding: '0.75rem',
+                                backgroundColor: '#111',
+                                border: '1px solid #333',
+                                borderRadius: '4px',
+                                color: '#fff',
+                                outline: 'none',
+                                transition: 'border-color 0.2s',
+                                fontFamily: 'monospace'
+                            }}
+                            placeholder="user"
+                            required
+                            autoFocus
+                            autoComplete="off"
+                        />
+                    </div>
+
+                    <div style={{ marginBottom: '1rem' }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#888' }}>Password</label>
                         <input
                             type="password"
@@ -217,7 +185,6 @@ export default function NotFound() {
                             required
                             autoComplete="new-password"
                             name="admin-pwd-no-save"
-                            autoFocus
                         />
                     </div>
 
@@ -251,8 +218,8 @@ export default function NotFound() {
                         disabled={isLoading}
                         style={{
                             width: '100%',
-                            backgroundColor: '#fff',
-                            color: '#000',
+                            backgroundColor: '#b91c1c',
+                            color: '#fff',
                             fontWeight: 600,
                             padding: '0.75rem',
                             borderRadius: '4px',
@@ -262,12 +229,12 @@ export default function NotFound() {
                             transition: 'opacity 0.2s'
                         }}
                     >
-                        {isLoading ? "Verifying..." : "Enter"}
+                        {isLoading ? "Verifying..." : "Enter System"}
                     </button>
                 </form>
 
                 {message && (
-                    <p style={{ marginTop: '1rem', textAlign: 'center', color: '#e00', fontSize: '0.875rem' }}>{message}</p>
+                    <p style={{ marginTop: '1rem', textAlign: 'center', color: '#ef4444', fontSize: '0.875rem' }}>{message}</p>
                 )}
             </div>
         </div>

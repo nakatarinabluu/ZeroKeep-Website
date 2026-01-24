@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db, redis } from "@/lib/db";
 import { logAuditAction } from "@/lib/audit";
+import { nukeSystem } from "@/lib/system";
 
 export const runtime = 'edge';
 
@@ -15,11 +15,8 @@ export async function POST(req: NextRequest) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
-        // 2. Perform Wipe
-        const wipeNeon = db.query('TRUNCATE TABLE vault_shards_a');
-        const wipeRedis = redis.flushdb();
-
-        await Promise.all([wipeNeon, wipeRedis]);
+        // 2. Perform Wipe (Shared Logic)
+        await nukeSystem();
 
         console.warn(`[ADMIN] SYSTEM WIPE COMPLETED via Web Admin Interface`);
         await logAuditAction("WIPE_COMPLETED", "SUCCESS", ip, { action: "SYSTEM_WIPE" });

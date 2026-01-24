@@ -19,7 +19,7 @@ export class VaultRepositoryImpl implements IVaultRepository {
         this.pepperRedis = redisPepper;
     }
 
-    async save(id: string, ownerHash: string, titleHash: string, encryptedBlob: string, iv: string, orderIndex: number = 0): Promise<void> {
+    async save(id: string, ownerHash: string, encryptedBlob: string, iv: string, orderIndex: number = 0): Promise<void> {
         // 1. Split the original encrypted_blob
         const mid = Math.floor(encryptedBlob.length / 2);
         const rawPartA = encryptedBlob.slice(0, mid);
@@ -33,8 +33,8 @@ export class VaultRepositoryImpl implements IVaultRepository {
 
         // 3. Save Part A to Neon
         const saveToNeon = db.query(
-            'INSERT INTO vault_shards_a (id, owner_hash, title_hash, content_a, iv, order_index) VALUES ($1, $2, $3, $4, $5, $6)',
-            [id, ownerHash, titleHash, content_a, iv, orderIndex]
+            'INSERT INTO vault_shards_a (id, owner_hash, content_a, iv, order_index) VALUES ($1, $2, $3, $4, $5)',
+            [id, ownerHash, content_a, iv, orderIndex]
         );
 
         // 4. Save Part B to Redis
@@ -47,7 +47,7 @@ export class VaultRepositoryImpl implements IVaultRepository {
     async fetchByOwner(ownerHash: string): Promise<VaultRecord[]> {
         // 1. Fetch Part A from Neon
         const dbResult = await db.query(
-            'SELECT id, title_hash, content_a, iv FROM vault_shards_a WHERE owner_hash = $1 ORDER BY order_index ASC',
+            'SELECT id, content_a, iv FROM vault_shards_a WHERE owner_hash = $1 ORDER BY order_index ASC',
             [ownerHash]
         );
         const rows = dbResult.rows;
@@ -57,7 +57,7 @@ export class VaultRepositoryImpl implements IVaultRepository {
         }
 
         // 2. Fetch Part B from Redis
-        const keys = rows.map((row: any) => `shard_b:${row.id}`);
+        const keys = rows.map((row: { id: string }) => `shard_b:${row.id}`);
         const redisValues = await redis.mget<string[]>(...keys);
 
         const results: VaultRecord[] = [];
@@ -81,7 +81,6 @@ export class VaultRepositoryImpl implements IVaultRepository {
                 results.push({
                     id: row.id,
                     owner_hash: ownerHash,
-                    title_hash: row.title_hash,
                     encrypted_blob: partA + partB,
                     iv: row.iv,
                 });
@@ -106,7 +105,7 @@ export class VaultRepositoryImpl implements IVaultRepository {
         // For security, strict deletion is better.
 
         const dbResult = await db.query('SELECT id FROM vault_shards_a WHERE owner_hash = $1', [ownerHash]);
-        const ids = dbResult.rows.map((r: any) => r.id);
+        const ids = dbResult.rows.map((r: { id: string }) => r.id);
 
         if (ids.length === 0) return;
 

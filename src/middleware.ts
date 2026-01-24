@@ -1,20 +1,15 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
 export const config = {
-    matcher: ['/api/:path*', '/vault-ops/:path*'],
+    matcher: ['/', '/api/:path*', '/vault-ops/:path*'],
 };
 
 const redis = Redis.fromEnv();
 
-// Rate Limiter: 100 requests per minute
-const ratelimit = new Ratelimit({
-    redis: redis,
-    limiter: Ratelimit.slidingWindow(100, '1 m'),
-    analytics: false, // No-Trace Logging: Disable analytics
-});
+// Rate Limit: Implemented manually via Redis below
+// const ratelimit = ... (Removed for cleanup)
 
 // Constant-time comparison
 function constantTimeEqual(a: string, b: string): boolean {
@@ -58,15 +53,21 @@ export async function middleware(req: NextRequest) {
             return response;
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const ip = (req as any).ip || req.headers.get('x-forwarded-for') || '127.0.0.1';
 
         // 0. Honeypot Trap (INSTANT BAN)
         const path = req.nextUrl.pathname;
         const honeypots = ['/wp-admin', '/admin', '/login', '/phpmyadmin', '/.env', '/config.php'];
-        // Fix: Allow /sys-monitor AND /api/sys-monitor (Login flows)
+
+        // FIX: Do NOT write to Redis just because a user visited a honeypot. 
+        // Only return 404. Writing 'ban:{ip}' allows DOS attacks (filling memory with random IPs).
+        // We only ban if they hit the actual Login API repeatedly.
         if (honeypots.some(h => path.includes(h)) &&
-            !path.startsWith('/api/sys-monitor')) {
-            await redis.set(`ban:${ip}`, 'true', { ex: 86400 }); // Ban for 24 hours
+            !path.startsWith('/api/sys-monitor') &&
+            !path.startsWith('/vault-ops/danger/login')) {
+            // Passive Defense: Just ignore them. 
+            // Saving 'ban' key here is a vulnerability (DOS).
             return new NextResponse(null, { status: 404 });
         }
 
@@ -77,48 +78,106 @@ export async function middleware(req: NextRequest) {
             return NextResponse.next();
         }
 
+        // 1.5 Authenticated Redirect (Stealth Persistence)
+        // If user has the Vault Key, they cannot see the Cover Page. They are pulled back to the Vault.
+        if (req.nextUrl.pathname === '/') {
+            const unlockCookie = req.cookies.get('vault_access_token');
+            if (unlockCookie) {
+                const url = req.nextUrl.clone();
+                url.pathname = '/vault-ops/logs';
+                return NextResponse.redirect(url);
+            }
+        }
+
         // 2. VAULT OPS DASHBOARD (Browser Access) 🛡️
         // ISOLATED AUTH: Basic Auth only. Does NOT share session with Sys-Monitor.
         // This prevents a Log Viewer exploit from wiping the database.
-        if (path.startsWith('/vault-ops')) {
+        // Also covers APIS: /api/vault-ops/* (except login, which is whitelisted above)
+        if (path.startsWith('/vault-ops') || path.startsWith('/api/vault-ops')) {
             // STEP 1: Check for "Unlocked" Cookie (From Stealth Login)
             const unlockCookie = req.cookies.get('vault_access_token');
             if (!unlockCookie) {
-                // If user hasn't logged in via Stealth Home, return Fake 404 UI
-                // We use rewrite so the URL stays the same but the content is the 404 page
                 const url = req.nextUrl.clone();
                 url.pathname = '/404';
                 return NextResponse.rewrite(url);
             }
 
-            // STEP 2: Basic Auth (Double Lock)
-            const authHeader = req.headers.get('authorization');
-            if (!authHeader) {
-                return new NextResponse('Auth Required', {
-                    status: 401,
-                    headers: { 'WWW-Authenticate': 'Basic realm="Vault Ops"' }
-                });
+            // IP SECURITY CHECK + PRIVACY (Blind Hash)
+            try {
+                const cookieHash = unlockCookie.value;
+
+                // 1. Calculate Expected Hash for THIS Request IP
+                const secret = process.env.GATE_1_SECRET || "";
+                const encoder = new TextEncoder();
+                const key = await crypto.subtle.importKey(
+                    'raw',
+                    encoder.encode(secret),
+                    { name: 'HMAC', hash: 'SHA-256' },
+                    false,
+                    ['sign']
+                );
+
+                const signatureBytes = await crypto.subtle.sign(
+                    'HMAC',
+                    key,
+                    encoder.encode(ip)
+                );
+
+                const expectedHash = Array.from(new Uint8Array(signatureBytes))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
+
+                // 2. Compare
+                // If the user changed IP (e.g. cafe to home), the hash will be different -> Block.
+                if (cookieHash !== expectedHash) {
+                    console.error(`🚨 ACCESS DENIED. Cookie Hash mismatch for IP ${ip}`);
+                    // Privacy Note: We cannot know what the original IP was.
+
+                    const response = new NextResponse("Session Invalidated (IP Changed)", { status: 403 });
+                    response.cookies.delete('vault_access_token');
+                    return response;
+                }
+
+            } catch (e) {
+                // Malformed Cookie
+                const url = req.nextUrl.clone();
+                url.pathname = '/404';
+                const res = NextResponse.rewrite(url);
+                res.cookies.delete('vault_access_token');
+                return res;
             }
 
-            const [scheme, encoded] = authHeader.split(' ');
-            if (!encoded || scheme !== 'Basic') {
-                return new NextResponse('Invalid Auth', { status: 400 });
-            }
 
-            const decoded = atob(encoded);
-            const [user, pwd] = decoded.split(':');
 
-            // Hardcoded for now (Enterprise would use DB/Env)
-            const validUser = process.env.ADMIN_USER || 'admin';
-            const validPass = process.env.ADMIN_PASS || 'ZeroKeep2026!';
+            // Basic Auth Removed. Access granted via Cookie.
 
-            if (user !== validUser || pwd !== validPass) {
-                return new NextResponse('Forbidden', { status: 403 });
+            // STEP 3: DANGER ZONE (Gateway 2 - Destruction PIN)
+            // If accessing Danger Zone, enforce 2nd Verification (Cookie Check)
+            if (path.startsWith('/vault-ops/danger') && !path.startsWith('/vault-ops/danger/login')) {
+                const dangerToken = req.cookies.get('danger_zone_token');
+                if (!dangerToken) {
+                    // Redirect to the red login screen
+                    const url = req.nextUrl.clone();
+                    url.pathname = '/vault-ops/danger/login';
+                    return NextResponse.redirect(url);
+                }
             }
 
             return NextResponse.next(); // ✅ Access Granted (Independent Session)
         }
 
+        // 2.5 LOW SECURITY ZONE (Public Home Page / Browser / Auth Endpoints)
+        // Ensure browser can access Landing Page & Login APIs without App Headers
+        // Critical: These are the entry points.
+        if (path === '/' || path === '/404' || path === '/favicon.ico' ||
+            path.startsWith('/api/sys-monitor/login') ||
+            path.startsWith('/api/sys-monitor/logout') ||
+            path.startsWith('/api/sys-monitor/status') ||
+            path.startsWith('/api/vault-ops/danger-login')) {
+            return NextResponse.next();
+        }
+
+        // --- BELOW THIS LINE IS API ONLY (STRICT) ---
         // 3. Strict Geo-Fencing + VPN Detection (Obsidian Level)
         const country = req.headers.get('x-vercel-ip-country');
         // VPN/Proxy Detection: Check common headers
@@ -149,7 +208,8 @@ export async function middleware(req: NextRequest) {
         // 3. User-Agent Masking
         const userAgent = req.headers.get('user-agent') || '';
         if (userAgent !== 'ZeroKeep-Android/1.0') {
-            await recordFailure(ip);
+            // FIX: Do not record failure for UA mismatch. 
+            // Attackers can randomize IPs and UAs to flood Redis.
             return new NextResponse(null, {
                 status: 403,
                 statusText: 'Forbidden',

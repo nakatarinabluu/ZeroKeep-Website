@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -13,19 +13,11 @@
 
   /* Android Brand Colors */
   --color-midnight-blue: #04326E;
-  /* OceanBlue (Primary) */
   --color-sky-blue: #2D8CFF;
-  /* SkyBlue (Secondary) */
   --color-dark-navy: #0F172A;
-  /* DarkBackground */
   --color-soft-cloud: #F4F6F8;
-  /* App Background (Light) */
   --color-pure-white: #FFFFFF;
-  /* Surface Whites */
   --color-text-primary: #1A1C1E;
-  /* Main Text */
-
-  /* Custom Android Shadows */
   --shadow-soft-blue: 0 10px 15px -3px rgba(45, 140, 255, 0.15), 0 4px 6px -2px rgba(45, 140, 255, 0.05);
 }
 
@@ -40,4 +32,114 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* GLITCH EFFECT (Stealth Portal) */
+.glitch-effect {
+  position: relative;
+}
+
+.glitch-effect::before,
+.glitch-effect::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch-effect::before {
+  left: 2px;
+  text-shadow: -1px 0 red;
+  clip: rect(24px, 550px, 90px, 0);
+  animation: glitch-anim-1 2.5s infinite linear alternate-reverse;
+}
+
+.glitch-effect::after {
+  left: -2px;
+  text-shadow: -1px 0 blue;
+  clip: rect(85px, 550px, 140px, 0);
+  animation: glitch-anim-2 3s infinite linear alternate-reverse;
+}
+
+@keyframes glitch-anim-1 {
+  0% {
+    clip: rect(20px, 9999px, 15px, 0);
+  }
+
+  20% {
+    clip: rect(60px, 9999px, 70px, 0);
+  }
+
+  40% {
+    clip: rect(20px, 9999px, 15px, 0);
+  }
+
+  60% {
+    clip: rect(80px, 9999px, 50px, 0);
+  }
+
+  80% {
+    clip: rect(30px, 9999px, 90px, 0);
+  }
+
+  100% {
+    clip: rect(40px, 9999px, 60px, 0);
+  }
+}
+
+@keyframes glitch-anim-2 {
+  0% {
+    clip: rect(15px, 9999px, 60px, 0);
+  }
+
+  20% {
+    clip: rect(80px, 9999px, 20px, 0);
+  }
+
+  40% {
+    clip: rect(30px, 9999px, 10px, 0);
+  }
+
+  60% {
+    clip: rect(50px, 9999px, 90px, 0);
+  }
+
+  80% {
+    clip: rect(10px, 9999px, 40px, 0);
+  }
+
+  100% {
+    clip: rect(70px, 9999px, 30px, 0);
+  }
+}
+
+.typewriter {
+  overflow: hidden;
+  border-right: .15em solid orange;
+  white-space: nowrap;
+  animation: typing 3.5s steps(40, end), blink-caret .75s step-end infinite;
+}
+
+@keyframes typing {
+  from {
+    width: 0
+  }
+
+  to {
+    width: 100%
+  }
+}
+
+@keyframes blink-caret {
+
+  from,
+  to {
+    border-color: transparent
+  }
+
+  50% {
+    border-color: orange;
+  }
 }

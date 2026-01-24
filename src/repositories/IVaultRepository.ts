@@ -1,7 +1,6 @@
 export interface VaultRecord {
     id: string;
     owner_hash: string;
-    title_hash: string;
     encrypted_blob: string; // The FULL re-assembled blob
     iv: string;
 }
@@ -10,7 +9,7 @@ export interface IVaultRepository {
     /**
      * Saves a record using Dual-Key Sharding (Part A -> Neon, Part B -> Redis)
      */
-    save(id: string, ownerHash: string, titleHash: string, encryptedBlob: string, iv: string): Promise<void>;
+    save(id: string, ownerHash: string, encryptedBlob: string, iv: string): Promise<void>;
 
     /**
      * Fetches all records for an owner, automatically re-assembling shards.

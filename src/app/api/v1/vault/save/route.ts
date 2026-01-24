@@ -8,7 +8,6 @@ export const runtime = 'edge';
 const SaveSchema = z.object({
     id: z.string().uuid(),
     owner_hash: z.string().min(32),
-    title_hash: z.string().min(1),
     encrypted_blob: z.string().min(1),
     iv: z.string().min(1),
 });
@@ -26,7 +25,7 @@ export async function POST(req: NextRequest) {
             }, { status: 400 });
         }
 
-        const { id, owner_hash, title_hash, encrypted_blob, iv } = result.data;
+        const { id, owner_hash, encrypted_blob, iv } = result.data;
 
         // SECURITY: Enforce Header vs Body Consistency
         const headerHash = req.headers.get('x-owner-hash');
@@ -39,7 +38,7 @@ export async function POST(req: NextRequest) {
 
         // Repository Pattern Implementation
         const repository = new VaultRepositoryImpl();
-        await repository.save(id, owner_hash, title_hash, encrypted_blob, iv);
+        await repository.save(id, owner_hash, encrypted_blob, iv);
 
         return NextResponse.json({ message: 'Securely Stored' }, { status: 201 });
     } catch (error) {
